@@ -5,10 +5,10 @@ pub(super) mod vertex {
             #version 460
 
             layout(location = 0) in vec2 pos;
-            layout(location = 1) in vec4 color;
 
             layout(push_constant) uniform PC {
                 vec2 screen_size;
+                vec4 color;
             } pc;
 
             layout(location = 0) out vec2 v_uv;
@@ -22,7 +22,7 @@ pub(super) mod vertex {
                 );
 
                 gl_Position = vec4(pos / pc.screen_size * 2.0 - 1.0, 0.0, 1.0);
-                v_color = color;
+                v_color = pc.color;
             }
         ",
     }

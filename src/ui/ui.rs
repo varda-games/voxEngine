@@ -1,8 +1,10 @@
-use rapier3d::glamx::{u8vec4, uvec4};
+use rapier3d::glamx::{Vec2, vec2, vec4};
+use sdl3::{event::Event, mouse::MouseButton};
 use vulkano::{
     buffer::{Buffer, BufferCreateInfo, BufferUsage, Subbuffer},
     format::Format,
     memory::allocator::{AllocationCreateInfo, MemoryTypeFilter},
+    padded::Padded,
     pipeline::{
         GraphicsPipeline, Pipeline, PipelineBindPoint,
         graphics::viewport::{Scissor, Viewport},
@@ -10,13 +12,13 @@ use vulkano::{
 };
 
 use super::{
-    Element,
+    Action, Element,
     shader::{fragment, vertex},
 };
 
 use crate::{
     common::{UiVertex, Updateable},
-    engine::{Engine, Frame, Record, helpers},
+    engine::{Engine, Frame, Record, helpers, scene::Transition},
     texture::Atlas,
 };
 
@@ -68,6 +70,81 @@ impl Ui {
 
         self.elements.push(element);
     }
+
+    pub fn on_click(&self, position: Vec2) -> Option<&Action> {
+        let element: Option<&Box<dyn Element>> = self
+            .elements
+            .iter()
+            .find(|element| element.in_bounds(position));
+
+        let action = match element {
+            None => None,
+            Some(action) => Some(action.get_action()),
+        };
+
+        action
+    }
+
+    pub fn on_hover(&mut self, position: Vec2) {
+        let element = self
+            .elements
+            .iter_mut()
+            .find(|element| element.in_bounds(position));
+
+        match element {
+            None => {}
+            Some(element) => {
+                element.set_color(vec4(0.5, 0.5, 0.5, 1.0));
+            }
+        }
+    }
+
+    pub fn off_hover(&mut self, position: Vec2) {
+        let element = self
+            .elements
+            .iter_mut()
+            .find(|element| element.get_color() == vec4(0.5, 0.5, 0.5, 1.0));
+
+        match element {
+            None => {}
+            Some(element) => {
+                element.set_color(vec4(1.0, 1.0, 1.0, 1.0));
+            }
+        }
+    }
+
+    pub fn handle_event(&mut self, event: &Event) -> Transition {
+        match event {
+            Event::MouseButtonUp {
+                mouse_btn: MouseButton::Left,
+                x,
+                y,
+                ..
+            } => {
+                let action = self.on_click(vec2(*x, *y));
+
+                match action {
+                    None => return Transition::None,
+                    Some(action) => match action {
+                        Action::SceneTransition(scene) => {
+                            return scene.clone();
+                        }
+                    },
+                }
+            }
+            Event::MouseMotion { x, y, .. } => {
+                let position = vec2(*x, *y);
+
+                self.off_hover(position);
+                self.on_hover(position);
+
+                return Transition::None;
+            }
+            _ => {}
+        }
+
+        return Transition::None;
+    }
 }
 
 impl Record for Ui {
@@ -79,24 +156,20 @@ impl Record for Ui {
             let base = vertices.len() as u32;
             e.set_first_idx(indices.len() as u32);
 
-            let (verts, inds, _) = e.get_tris();
+            let (verts, _) = e.get_tris();
 
             vertices.extend([
                 UiVertex {
                     pos: verts[0].to_array(),
-                    color: u8vec4(255, 255, 255, 255).to_array(),
                 },
                 UiVertex {
                     pos: verts[1].to_array(),
-                    color: u8vec4(255, 255, 255, 255).to_array(),
                 },
                 UiVertex {
                     pos: verts[2].to_array(),
-                    color: u8vec4(255, 255, 255, 255).to_array(),
                 },
                 UiVertex {
                     pos: verts[3].to_array(),
-                    color: u8vec4(255, 255, 255, 255).to_array(),
                 },
             ]);
             indices.extend([base, base + 1, base + 2, base, base + 2, base + 3]);
@@ -142,8 +215,6 @@ impl Record for Ui {
             engine.get_dimensions().1 as f32,
         ];
 
-        let push_data = vertex::PC { screen_size };
-
         let builder = frame.get_builder_mut();
 
         builder
@@ -173,15 +244,22 @@ impl Record for Ui {
             .unwrap()
             .bind_pipeline_graphics(self.pipeline.clone())
             .unwrap()
-            .push_constants(self.pipeline.layout().clone(), 0, push_data)
-            .unwrap()
             .bind_vertex_buffers(0, self.vertex_buffer.as_ref().unwrap().clone())
             .unwrap()
             .bind_index_buffer(self.index_buffer.as_ref().unwrap().clone())
             .unwrap();
 
         for e in self.elements.iter() {
+            let color = e.get_color();
+
+            let push_data = vertex::PC {
+                screen_size: Padded(screen_size),
+                color: color.to_array(),
+            };
+
             builder
+                .push_constants(self.pipeline.layout().clone(), 0, push_data)
+                .unwrap()
                 .bind_descriptor_sets(
                     PipelineBindPoint::Graphics,
                     self.pipeline.layout().clone(),
@@ -194,7 +272,7 @@ impl Record for Ui {
                 )
                 .unwrap();
 
-            let (_, _, first_index) = e.get_tris();
+            let (_, first_index) = e.get_tris();
 
             unsafe {
                 builder.draw_indexed(6, 1, first_index, 0, 0).unwrap();

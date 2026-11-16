@@ -13,7 +13,8 @@ use vulkano::{
     instance::{Instance, InstanceCreateFlags, InstanceCreateInfo, InstanceExtensions},
     memory::allocator::{MemoryTypeFilter, StandardMemoryAllocator},
     swapchain::{
-        PresentMode, Surface, SurfaceApi, Swapchain, SwapchainAcquireFuture, SwapchainCreateInfo,
+        CompositeAlpha, PresentMode, Surface, SurfaceApi, Swapchain, SwapchainAcquireFuture,
+        SwapchainCreateInfo,
     },
     sync::{GpuFuture, now, semaphore::Semaphore},
 };
@@ -233,7 +234,19 @@ impl Engine {
             .surface_capabilities(&surface, Default::default())
             .expect("failed to get surface capabilities");
 
-        let composite_alpha = caps.supported_composite_alpha.into_iter().next().unwrap();
+        let composite_alpha = caps
+            .supported_composite_alpha
+            .into_iter()
+            .find(|a| {
+                matches!(
+                    a,
+                    CompositeAlpha::PreMultiplied | CompositeAlpha::PostMultiplied
+                )
+            })
+            .unwrap_or_else(|| {
+                eprintln!("compositor doesn't support transparency, falling back");
+                caps.supported_composite_alpha.into_iter().next().unwrap()
+            });
 
         let image_format = physical_device
             .surface_formats(&surface, Default::default())
