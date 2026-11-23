@@ -1,4 +1,10 @@
 # Vox(el) Engine
+![version](https://img.shields.io/crates/v/vox_engine?style=for-the-badge)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/varda-games/voxEngine/static.yml?style=for-the-badge&label=docs)
+![Static Badge](https://img.shields.io/badge/made%20with-rust-orange?style=for-the-badge&logo=rust)
+![GitHub License](https://img.shields.io/github/license/varda-games/voxEngine?style=for-the-badge)
+
+
 
 # why a custom engine?
 
