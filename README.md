@@ -11,7 +11,22 @@ reasoning behind starting this project was that i wanted to learn the ins and ou
 game engines like unity or unreal, but at this stage it might genuinely be more difficult to implement  
 the rendering style i want in a game engine like unity.
 
+# Want to use this for yourself?
+
+add:
+
+``` toml
+  voxEngine = "0.5.1"
+  vulkano = "0.35.2"
+```
+
+to your `Cargo.toml`
+
+**also** check out the [docs](https://varda-games.github.io/voxEngine/vox_engine/index.html)
+
 ## dev logs
+
+join the varda-games [discord](https://discord.gg/7X3Bvun4HU)
 
 check out [voxEngine devlogs](https://youtube.com/playlist?list=PLkGaFuDyjwONmwLIEOyiIF43p4a-F6Qlz&si=TiN8CTq6OB9KWOlf)
 
