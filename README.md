@@ -11,21 +11,6 @@ reasoning behind starting this project was that i wanted to learn the ins and ou
 game engines like unity or unreal, but at this stage it might genuinely be more difficult to implement  
 the rendering style i want in a game engine like unity.
 
-## binaries
-
-binaries for windows and linux are under [releases](https://github.com/Singhzing-kid1/voxEngine/releases/tag/v0.2.0-preAlpha)
-
-
-for in progress builds check the actions tab -> top run is the latest (click on it) -> look at the artifacts(these are inprogress builds)
-
-## build
-
-make sure you have the latest version of rust installed
-
-clone the project and use `cargo build --release` to build.
-
-the build will output @ `./target/release/`
-
 ## dev logs
 
 check out [voxEngine devlogs](https://youtube.com/playlist?list=PLkGaFuDyjwONmwLIEOyiIF43p4a-F6Qlz&si=TiN8CTq6OB9KWOlf)
